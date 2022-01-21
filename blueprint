@@ -1,8 +1,8 @@
 blueprint:
-  name: Motion and brightness activated Light
-  description: Turn on a light when motion is detected and it is dark enough (or night).
+  name: HUE App rebuild automation
+  description: Rebuilding the apps functionality.
   domain: automation
-  source_url: https://github.com/OliverHi/blueprints/blob/main/motion_brightness_light.yaml
+  source_url: https://https://github.com/dafloor/HUE_lights_template_rebuild/edit/main/blueprint
   input:
     motion_entity:
       name: Motion Sensor
@@ -54,9 +54,7 @@ blueprint:
     scene_name:
       name: Name Scene
       selector:
-        target:
-          entity:
-            domain: scene
+        scene:
 
 # If motion is detected within the delay,
 # we restart the script.
@@ -70,11 +68,8 @@ trigger:
   to: "on"
 
 condition:
-  - condition: or
+  - condition: and
     conditions:
-      - condition: sun
-        before: sunrise
-        after: sunset
       - condition: numeric_state
         entity_id: !input brightness_entity
         below: !input brightness_trigger
