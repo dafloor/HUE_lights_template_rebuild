@@ -53,8 +53,9 @@ blueprint:
         time:
     scene_name:
       name: Name Scene
-      entity:
-        domain: scene
+      selector:
+        entity:
+          domain: scene
 
 # If motion is detected within the delay,
 # we restart the script.
@@ -81,7 +82,7 @@ condition:
 action:
   - service: light.turn_on
     data:
-      profile: !input scene_name
+      scene_name: !input scene_name
     target: !input light_target
   - wait_for_trigger:
       platform: state
