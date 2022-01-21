@@ -80,11 +80,10 @@ condition:
         before: !input end_time
   
 action:
-  - service: light.turn_on
-    data:
-      scene_name: !input scene_name
-    target: !input light_target
-  - wait_for_trigger:
+#  - service: light.turn_on
+#    target: !input light_target
+ - scene: !input scene_name
+ - wait_for_trigger:
       platform: state
       entity_id: !input motion_entity
       from: "on"
