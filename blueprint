@@ -53,8 +53,8 @@ blueprint:
         time:
     scene_name:
       name: Name Scene
-      selector:
-        scene:
+      entity:
+        domain: scene
 
 # If motion is detected within the delay,
 # we restart the script.
