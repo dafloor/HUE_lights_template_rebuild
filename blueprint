@@ -2,7 +2,7 @@ blueprint:
   name: HUE App rebuild automation
   description: Rebuilding the apps functionality.
   domain: automation
-  source_url: https://https://github.com/dafloor/HUE_lights_template_rebuild/edit/main/blueprint
+  source_url: https://github.com/dafloor/HUE_lights_template_rebuild/blob/main/blueprint
   input:
     motion_entity:
       name: Motion Sensor
@@ -11,7 +11,7 @@ blueprint:
           domain: binary_sensor
           device_class: motion
     brightness_entity:
-      name: Lux/Brightness Sensor
+      name: Brightness Sensor
       selector:
         entity:
           device_class: illuminance
@@ -27,67 +27,68 @@ blueprint:
       default: 20
       selector:
         number:
-          min: 0
-          max: 1000
+          min: 0.0
+          max: 1000.0
           unit_of_measurement: lx
+          mode: slider
+          step: 1.0
     no_motion_wait:
       name: Wait time
       description: Time to leave the light on after last motion is detected.
-      default: 120
+      default: 300
       selector:
         number:
-          min: 0
-          max: 3600
+          min: 0.0
+          max: 36000.0
           unit_of_measurement: seconds
+          mode: slider
+          step: 10.0
     start_time:
       name: Start Time
       description: Time action should start
-      default: "17:00:00"
+      default: '06:00:00'
       selector:
-        time:
+        time: {}
     end_time:
       name: End Time
-      default: "00:00:00"
+      default: '23:00:00'
       description: Time action should stop
       selector:
-        time:
-    scene_name:
+        time: {}
+    scene_name:      
       name: Name Scene
       selector:
         entity:
           domain: scene
 
-# If motion is detected within the delay,
-# we restart the script.
 mode: restart
 max_exceeded: silent
 
 trigger:
   platform: state
-  entity_id: !input motion_entity
-  from: "off"
-  to: "on"
+  entity_id: !input 'motion_entity'
+  from: 'off'
+  to: 'on'
 
 condition:
-  - condition: and
-    conditions:
-      - condition: numeric_state
-        entity_id: !input brightness_entity
-        below: !input brightness_trigger
-      - condition: time
-#       At least one of the following is required.
-        after: !input start_time
-        before: !input end_time
-  
+- condition: and
+  conditions:
+  - condition: numeric_state
+    entity_id: !input 'brightness_entity'
+    below: !input 'brightness_trigger'
+  - condition: time
+    after: !input 'start_time'
+    before: !input 'end_time'
+
 action:
-  - service: scene.turn_on
-    target:
-      entity_id: !input scene_name
-  - wait_for_trigger:
-      platform: state
-      entity_id: !input motion_entity
-      from: "on"
-      to: "off"
-  - delay: !input no_motion_wait
-  - service: light.turn_off
-    target: !input light_target
+- service: scene.turn_on
+  target:
+    entity_id: !input 'scene_name'
+- wait_for_trigger:
+    platform: state
+    entity_id: !input 'motion_entity'
+    from: 'on'
+    to: 'off'
+- delay: !input 'no_motion_wait'
+- service: light.turn_off
+  target: !input 'light_target'
