@@ -1,31 +1,37 @@
 blueprint:
-  name: HUE App rebuild automation (Enhanced)
-  description: Controls lights based on motion and brightness with scene activation or dimming options.
+  name: HUE App rebuild automation
+  description: Rebuilding the apps functionality.
   domain: automation
-  source_url: https://github.com/dafloor/HUE_lights_template_rebuild/blob/main/blueprint  # Update URL if code changes
-
+  source_url: https://github.com/dafloor/HUE_lights_template_rebuild/blob/main/blueprint
   input:
     motion_entity:
-      name: Motion Sensor(s)  # Allow multiple sensors (see trigger)
+      name: Motion Sensor
       selector:
         entity:
-          domain: binary_sensor
-          device_class: motion
+          domain:
+          - binary_sensor
+          device_class:
+          - motion
+          multiple: false
     brightness_entity:
       name: Brightness Sensor
       selector:
         entity:
-          device_class: illuminance
+          device_class:
+          - illuminance
+          multiple: false
     light_target:
-      name: Lights to turn on/dim
+      name: Light(s) to control
       selector:
         target:
           entity:
-            domain: light
+          - domain:
+            - light
     brightness_trigger:
-      name: Minimum Brightness for Activation (lux)
-      description: Lights will activate only if it's darker than this level.
-      default: 50  # Increased default value
+      name: Maximum brightness
+      description: Brightness trigger level. If it gets any brighter the lights will
+        not be turned on.
+      default: 20
       selector:
         number:
           min: 0.0
@@ -33,31 +39,9 @@ blueprint:
           unit_of_measurement: lx
           mode: slider
           step: 1.0
-    dimming_enabled:  # New option for dimming
-      name: Enable Dimming instead of Scene Activation
-      default: false
-      selector:
-        boolean: {}
-    dim_level:  # New option for dimming level
-      name: Dimming Level (0-100%) when activated
-      default: 50
-      selector:
-        number:
-          min: 0.0
-          max: 100.0
-          unit_of_measurement: "%"
-          mode: slider
-          step: 1.0
-          visible: !input 'dimming_enabled'  # Only visible if dimming enabled
-    scene_name:
-      name: Scene to Activate (if dimming not enabled)
-      selector:
-        entity:
-          domain: scene
-      visible: !input "dimming_enabled"  # Only visible if dimming not enabled
     no_motion_wait:
-      name: Wait time after motion stops
-      description: Time to leave lights on/dimmed after last motion is detected.
+      name: Wait time
+      description: Time to leave the light on after last motion is detected.
       default: 300
       selector:
         number:
@@ -69,7 +53,7 @@ blueprint:
     start_time:
       name: Start Time
       description: Time action should start
-      default: '06:00:00'
+      default: 06:00:00
       selector:
         time: {}
     end_time:
@@ -78,47 +62,38 @@ blueprint:
       description: Time action should stop
       selector:
         time: {}
-    enable_automation:  # New option to enable/disable
-      name: Enable Automation
-      default: true
+    scene_name:
+      name: Name Scene
       selector:
-        boolean: {}
-
-  mode: restart
-  max_exceeded: silent
-
-  trigger:
-    - platform: state  # Allow multiple sensors with OR logic (see condition)
-      entity_id: "{{ range motion_entity | list }}"  # Iterate through all motion sensors
-      from: 'off'
-      to: 'on'
-
-  condition:
-    - condition: and
-      conditions:
-        - condition: numeric_state
-          entity_id: !input 'brightness_entity'
-          below: !input 'brightness_trigger'
-        - condition: time
-          after: !input 'start_time'
-          before: !input 'end_time'
-        - condition: state  # Check if automation is enabled
-          entity_id: input.enable_automation
-          state: 'on'
-
-  action:
-    - choose:  # Choose between scene activation or dimming
-      - conditions: !input 'dimming_enabled'  # Activate scene if dimming not enabled
-        sequence:
-          - service: scene.turn_on
-            target:
-              entity_id: !input 'scene_name'
-      - sequence:  # Dim lights if dimming enabled
-          - service: light.turn_on
-            target:
-              entity_id: !input 'light_target'
-          - service: light.set_brightness
-            target:
-              entity_id: !input 'light_target'
-            data:
-              brightness: !
+        entity:
+          domain:
+          - scene
+          multiple: false
+mode: restart
+max_exceeded: silent
+trigger:
+  platform: state
+  entity_id: !input motion_entity
+  from: 'off'
+  to: 'on'
+condition:
+- condition: and
+  conditions:
+  - condition: numeric_state
+    entity_id: !input brightness_entity
+    below: !input brightness_trigger
+  - condition: time
+    after: !input start_time
+    before: !input end_time
+action:
+- service: scene.turn_on
+  target:
+    entity_id: !input scene_name
+- wait_for_trigger:
+    platform: state
+    entity_id: !input motion_entity
+    from: 'on'
+    to: 'off'
+- delay: !input no_motion_wait
+- service: light.turn_off
+  target: !input light_target
